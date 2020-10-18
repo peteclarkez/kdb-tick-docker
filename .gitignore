@@ -1,0 +1,5 @@
+*.log
+sym20*
+./kdb-tick/sym
+.DS_Store
+*.env
