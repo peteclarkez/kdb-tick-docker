@@ -38,11 +38,16 @@ if[system"t";
  if[not -16=type first first x;if[d<"d"$a:.z.P;.z.ts[]];a:"n"$a;x:$[0>type first x;a,x;(enlist(count first x)#a),x]];
  t insert x;if[l;l enlist (`upd;t;x);j+:1];}];
 
-if[not system"t";system"t 1000";
+if[not system"t";
+ system"t 1000";
  .z.ts:{ts .z.D};
- upd:{[t;x]ts"d"$a:.z.P;
- if[not -16=type first first x;a:"n"$a;x:$[0>type first x;a,x;(enlist(count first x)#a),x]];
- f:key flip value t;pub[t;$[0>type first x;enlist f!x;flip f!x]];if[l;l enlist (`upd;t;x);i+:1];}];
+ upd:{[t;x]
+   .dbg.t:t;.dbg.x:x;
+   ts"d"$a:.z.P;
+   if[not -12=type first first x;a:"n"$a;x:$[0>type first x;a,x;(enlist(count first x)#a),x]];
+   f:key flip value t;pub[t;$[0>type first x;enlist f!x;flip f!x]];if[l;l enlist (`upd;t;x);i+:1];
+  }
+ ];
 
 \d .
 .u.tick[src;.z.x 1];
