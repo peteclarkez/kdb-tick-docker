@@ -10,7 +10,7 @@ RUN chmod 774 $Q_TICKHOME && \
 
 COPY --chown=kx docker/tick.sh $Q_TICKHOME
 COPY --chown=kx kdb-tick/*.q $Q_TICKHOME
-COPY --chown=kx kdb-tick/tick/*.q $Q_TICKHOME/tick
+COPY --chown=kx kdb-tick/tick/*.q $Q_TICKHOME/tick/
 
 ENTRYPOINT ["/init"]
 CMD ["/opt/kx/kdb-tick/tick.sh"]
