@@ -63,3 +63,8 @@ In order to run this up, first build the image and then run the container
 docker build -t kdb-tick -f docker/Dockerfile .
 docker run --env-file mytick.env -p 5010:5010 -p 5011:5011 -ti kdb-tick
 ```
+
+# TODO
+
+- Properly test HDB over longer period
+- Add GW processes to allow a single entry point
