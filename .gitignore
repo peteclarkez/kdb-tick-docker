@@ -3,3 +3,6 @@ sym20*
 ./kdb-tick/sym
 .DS_Store
 *.env
+!*.env.example
+data/
+scripts/

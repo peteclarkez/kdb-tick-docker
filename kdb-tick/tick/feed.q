@@ -2,8 +2,10 @@
 \l tick/sym.q
 
 // connect to tickerplant
-//backtick and double colons(rather than 1) needed for running run.sh file 
-h:hopen `::5010;
+// Port can be passed as command line argument (e.g., q feed.q :5010)
+// Defaults to localhost:5010 if not provided
+tp:$[count .z.x;`$first .z.x;`::5010];
+h:hopen tp;
 // number of rows to send in each update
 r:20;
 // number of updates to send per millisecond
