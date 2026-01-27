@@ -90,7 +90,11 @@ echo ""
 echo "Process status:"
 ps aux | grep -E "q (tick|feed)" | grep -v grep || true
 echo ""
-echo "Tailing tickerplant log..."
+echo "Tailing all logs..."
 
-# Keep container running and show tick log
-tail -f "${TICK_HOME}/logs/tick.log"
+# Keep container running and show all logs
+tail -f "${TICK_HOME}/logs/tick.log" \
+       "${TICK_HOME}/logs/rdb.log" \
+       "${TICK_HOME}/logs/hdb.log" \
+       "${TICK_HOME}/logs/gw.log" \
+       "${TICK_HOME}/logs/feed.log"
