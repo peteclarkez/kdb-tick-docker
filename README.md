@@ -4,13 +4,14 @@ A dockerized kdb+tick data pipeline using KDB-X, the latest release of kdb+ from
 
 ## Overview
 
-This project demonstrates how to deploy a complete kdb+ tick data pipeline in Docker containers using KDB-X. The setup includes:
+This project provides a generic, customizable kdb+ tick data pipeline in Docker. The core tick system is built into the image, while table schemas and custom functions are provided via mounted volumes.
 
+Components:
 - **Tickerplant** (Port 5010): Core message broker for real-time data
 - **RDB** (Port 5011): Real-time database for current day data
 - **HDB** (Port 5012): Historical database for persisted data
 - **Gateway** (Port 5013): Unified query interface for RDB + HDB
-- **Feed Handler**: Test data publisher
+- **Feed Handler** (optional): Test data publisher
 
 ## Architecture
 
@@ -27,85 +28,137 @@ This project demonstrates how to deploy a complete kdb+ tick data pipeline in Do
        │     RDB     │          │     HDB     │
        │    (r.q)    │ :5011    │   (hdb.q)   │ :5012
        └──────┬──────┘          └─────────────┘
-              │
-              │ subscribe
-              ▼
-       ┌─────────────┐
-       │ Tickerplant │ :5010
-       │  (tick.q)   │
-       └──────┬──────┘
+              │                        ▲
+              │ subscribe              │ load
+              ▼                        │
+       ┌─────────────┐          ┌─────────────┐
+       │ Tickerplant │          │   /data     │
+       │  (tick.q)   │ :5010    │  (HDB data) │
+       └──────┬──────┘          └─────────────┘
               │
               │ publish
               ▼
        ┌─────────────┐
        │    Feed     │
-       │  (feed.q)   │
+       │  (feed.q)   │  ← from /scripts
        └─────────────┘
 ```
 
-## Prerequisites
+## Volume Mounts
 
-- Docker 20.10+
-- KX Developer Portal account for KDB-X access
-- Bearer token and base64 license from [KX Developer Portal](https://developer.kx.com/products/kdb-x/install)
+The system uses four external mount points for separation of concerns:
+
+| Mount Point | Purpose | Contents |
+|-------------|---------|----------|
+| `/data` | HDB data | Date partitions (2024.01.27/), sym file |
+| `/logs` | Application logs | tick.log, rdb.log, hdb.log, gw.log, feed.log |
+| `/tplogs` | Tickerplant event logs | Binary event logs (sym2024.01.27) |
+| `/scripts` | User customization | sym.q (required), feed.q, *_custom.q (optional) |
 
 ## Quick Start
 
 ### 1. Configure Environment
 
-Copy the example environment file and add your KX credentials:
-
 ```bash
 cp kdbx.env.example kdbx.env
+# Edit kdbx.env with your KX credentials
 ```
 
-Edit `kdbx.env` with your credentials:
-```
-KX_BEARER_TOKEN=your_bearer_token_here
-KX_LICENSE_B64=your_base64_license_here
-```
-
-### 2. Build the Image
+### 2. Create Mount Directories
 
 ```bash
-# Load environment and build
-export $(cat kdbx.env | xargs)
-docker build \
-  --build-arg KX_BEARER_TOKEN="${KX_BEARER_TOKEN}" \
-  --build-arg KX_LICENSE_B64="${KX_LICENSE_B64}" \
-  -t kdbx-tick \
-  -f docker/Dockerfile .
+mkdir -p data logs tplogs scripts
 ```
 
-### 3. Run the Container
+### 3. Add Required Scripts
+
+The `scripts/sym.q` file is **required** - it defines your table schemas:
 
 ```bash
-docker run -d \
-  --name kdbx-tick \
-  -p 5010:5010 \
-  -p 5011:5011 \
-  -p 5012:5012 \
-  -p 5013:5013 \
-  -v $(pwd)/data:/data/tick \
-  -v $(pwd)/scripts:/scripts \
-  kdbx-tick
+# Copy the example scripts
+cp scripts/sym.q scripts/
+cp scripts/feed.q scripts/       # Optional: enables test data feed
+cp scripts/rdb_custom.q scripts/ # Optional: custom RDB functions
+```
+
+### 4. Build and Run
+
+```bash
+# Using docker compose (recommended)
+docker compose --env-file kdbx.env up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop
+docker compose --env-file kdbx.env down
+```
+
+## Customization via /scripts
+
+### Required: sym.q
+
+Defines table schemas. Must be mounted at `/scripts/sym.q`:
+
+```q
+/ Table schemas
+trade:([]time:`timestamp$();sym:`symbol$();price:`float$();size:`int$())
+quote:([]time:`timestamp$();sym:`symbol$();bid:`float$();ask:`float$();bsize:`int$();asize:`int$())
+```
+
+### Optional: feed.q
+
+If present, the feed handler will start automatically and publish test data:
+
+```q
+/ Custom feed handler
+/ See scripts/feed.q for example
+```
+
+### Optional: Custom Functions
+
+Add custom analytics by creating these files:
+
+| File | Loaded By | Purpose |
+|------|-----------|---------|
+| `rdb_custom.q` | RDB | Real-time analytics |
+| `hdb_custom.q` | HDB | Historical analytics |
+| `gw_custom.q` | Gateway | Cross-database analytics |
+
+Example `rdb_custom.q`:
+```q
+/ Get last trade for each symbol
+lastTrades:{select last time, last price, last size by sym from trade};
 ```
 
 ## Using the Gateway
 
-The gateway provides a unified interface to query both real-time (RDB) and historical (HDB) data.
+### HTTP API (curl)
 
-### Connect to Gateway
+```bash
+# Check status
+curl "http://localhost:5013?status[]"
+
+# Get trade count
+curl "http://localhost:5013?count%20getTodayTrades[\`]"
+
+# Get recent trades
+curl "http://localhost:5013?-5%23getTodayTrades[\`]"
+```
+
+### IPC Connection
 
 ```q
 // From q
 h:hopen `:localhost:5013
+h"getTodayTrades[`AAPL`MSFT]"
 ```
 
 ```python
 # From Python
 import pykx as kx
 gw = kx.SyncQConnection(host='localhost', port=5013)
+gw('getTodayTrades[`AAPL`MSFT]')
 ```
 
 ### Query Functions
@@ -117,45 +170,43 @@ gw = kx.SyncQConnection(host='localhost', port=5013)
 | `getData[tbl;sd;ed;ids]` | Generic table query |
 | `getTodayTrades[ids]` | Today's trades for symbols |
 | `getTodayQuotes[ids]` | Today's quotes for symbols |
-| `getRecentTrades[days;ids]` | Last N days of trades |
-| `getRecentQuotes[days;ids]` | Last N days of quotes |
 | `getVWAP[sd;ed;ids]` | Volume weighted average price |
 | `getOHLC[sd;ed;ids]` | Open/High/Low/Close bars |
 | `status[]` | Connection status |
-| `reconnect[]` | Reconnect to RDB/HDB |
+| `rdbStats[]` | RDB record counts and HDB directory |
+| `triggerEOD[]` | Manual end-of-day save |
 
-### Examples
+## HDB Persistence
+
+At end-of-day (midnight), the RDB automatically saves data to `/data` and signals the HDB to reload.
+
+### Manual EOD Save
 
 ```q
 h:hopen `:localhost:5013
-
-// Get all trades for today
-h"getTodayTrades[`]"
-
-// Get trades for specific symbols
-h"getTodayTrades[`AAPL`MSFT`GOOG]"
-
-// Get trades for date range
-h"getTradeData[2024.01.01;.z.D;`AAPL`MSFT]"
-
-// Get VWAP for last 7 days
-h"getVWAP[.z.D-7;.z.D;`AAPL`MSFT]"
-
-// Get OHLC (candlestick) data
-h"getOHLC[.z.D-30;.z.D;`AAPL]"
-
-// Check connection status
-h"status[]"
+h"rdbStats[]"      // Check current state
+h"triggerEOD[]"    // Save to HDB (clears RDB!)
 ```
 
-## Ports
+### Data Directory Structure
 
-| Port | Service | Description |
-|------|---------|-------------|
-| 5010 | Tickerplant | Message broker, receives and logs all data |
-| 5011 | RDB | Real-time database, current day in-memory |
-| 5012 | HDB | Historical database, persisted data |
-| 5013 | Gateway | Unified query interface |
+```
+/data/
+├── 2024.01.27/          # Date partition
+│   ├── trade/           # Trade table columns
+│   └── quote/           # Quote table columns
+└── sym                  # Symbol enumeration file
+
+/tplogs/
+└── sym2024.01.27        # Tickerplant binary event log
+
+/logs/
+├── tick.log             # Tickerplant application log
+├── rdb.log              # RDB application log
+├── hdb.log              # HDB application log
+├── gw.log               # Gateway application log
+└── feed.log             # Feed handler application log
+```
 
 ## Environment Variables
 
@@ -170,92 +221,41 @@ h"status[]"
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KX_LICENSE_B64` | (build-time) | Override license at runtime (base64-encoded) |
+| `KX_LICENSE_B64` | (build-time) | Override license at runtime |
 | `TICK_PORT` | 5010 | Tickerplant port |
 | `RDB_PORT` | 5011 | RDB port |
 | `HDB_PORT` | 5012 | HDB port |
 | `GW_PORT` | 5013 | Gateway port |
-| `TICK_DATA_DIR` | /data/tick | Data storage directory |
+| `TICK_DATA_DIR` | /data | HDB data directory |
+| `TICK_LOG_DIR` | /logs | Application logs directory |
+| `TICK_TPLOG_DIR` | /tplogs | Tickerplant event logs |
+| `TICK_SCRIPTS_DIR` | /scripts | User scripts directory |
 
-### Runtime License Override
+## Ports
 
-You can override the build-time license by passing `KX_LICENSE_B64` at runtime:
-
-```bash
-docker run -d \
-  --name kdbx-tick \
-  -e KX_LICENSE_B64="your_base64_license_here" \
-  -p 5010:5010 -p 5011:5011 -p 5012:5012 -p 5013:5013 \
-  kdbx-tick
-```
-
-This is useful for:
-- Using different licenses in different environments (dev/staging/prod)
-- Updating an expired license without rebuilding the image
-- Sharing images without embedding licenses
-
-## Volume Mounts
-
-| Container Path | Purpose |
-|----------------|---------|
-| `/data/tick` | Tick data, logs, and HDB partitions |
-| `/scripts` | Custom q scripts |
+| Port | Service | Description |
+|------|---------|-------------|
+| 5010 | Tickerplant | Message broker, receives and logs all data |
+| 5011 | RDB | Real-time database, current day in-memory |
+| 5012 | HDB | Historical database, persisted data |
+| 5013 | Gateway | Unified query interface |
 
 ## Health Check
 
-The container includes a health check that verifies the tickerplant port (5010) is listening:
-
 ```bash
 docker inspect --format='{{.State.Health.Status}}' kdbx-tick
-```
-
-## Logs
-
-Logs are stored in `/opt/kx/kdb-tick/logs/`:
-
-| Log File | Process |
-|----------|---------|
-| `tick.log` | Tickerplant |
-| `rdb.log` | RDB |
-| `hdb.log` | HDB |
-| `gw.log` | Gateway |
-| `feed.log` | Feed handler |
-
-View logs:
-```bash
-docker exec kdbx-tick cat /opt/kx/kdb-tick/logs/gw.log
 ```
 
 ## Docker Image Architecture
 
 The Dockerfile uses a multi-stage build:
 
-### Stage 1: Base Image
-- Ubuntu 24.04
-- Python 3.13 from deadsnakes PPA
-- rlwrap, lsof, unzip, and other utilities
+1. **Base**: Ubuntu 24.04 + Python 3.13 + utilities
+2. **Builder**: Downloads and installs KDB-X
+3. **Runtime**: kdb user, tick system, volume mounts
 
-### Stage 2: Builder
-- Downloads and installs KDB-X using bearer token authentication
-- Installs KDB-X to `~/.kx` directory
-
-### Stage 3: Runtime
-- Creates `kdb` user for security
-- Copies KDB-X installation from builder
-- Sets up Python virtual environment with pykx
-- Configures tick system with volume mounts
-
-## Tick System Components
-
-| File | Description |
-|------|-------------|
-| `tick.q` | Tickerplant - receives data, logs to disk, publishes to subscribers |
-| `r.q` | RDB - subscribes to tickerplant, stores today's data in memory |
-| `hdb.q` | HDB - loads and serves historical partitioned data |
-| `gw.q` | Gateway - routes queries to RDB/HDB, combines results |
-| `feed.q` | Feed handler - publishes test trade data |
-| `u.q` | Utilities - pub/sub helper functions |
-| `sym.q` | Schema - trade and quote table definitions |
+Core tick scripts (tick.q, r.q, hdb.q, gw.q, u.q) are built into the image.
+User customization (sym.q, feed.q, *_custom.q) comes from /scripts mount.
 
 ## References
 
