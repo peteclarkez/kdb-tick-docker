@@ -18,3 +18,22 @@ upd:insert;
 / connect to ticker plant for (schema;(logcount;log))
 .u.rep .(hopen `$":",.u.x 0)"(.u.sub[`;`];`.u `i`L)";
 
+/ Gateway access function - query data by date range and symbols
+/ tbl: table name (e.g. `trade)
+/ sd: start date
+/ ed: end date
+/ ids: list of symbols (pass ` for all)
+selectFunc:{[tbl;sd;ed;ids]
+  $[`date in cols tbl;
+    / If table has date column, filter by date range and symbols
+    $[ids~`;
+      select from tbl where date within (sd;ed);
+      select from tbl where date within (sd;ed), sym in ids];
+    / RDB table (no date column) - add today's date and filter
+    [res:$[.z.D within (sd;ed);
+        $[ids~`; select from tbl; select from tbl where sym in ids];
+        0#value tbl];
+      `date xcols update date:.z.D from res]
+  ]
+ };
+

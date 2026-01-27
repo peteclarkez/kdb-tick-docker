@@ -93,8 +93,8 @@ RUN chmod +x ${Q_TICKHOME}/tick.sh
 # Volume mounts for data and custom scripts
 VOLUME ["/data/tick", "/scripts"]
 
-# Expose tickerplant and RDB ports
-EXPOSE 5010 5011 5012
+# Expose all kdb+ ports: Tickerplant, RDB, HDB, Gateway
+EXPOSE 5010 5011 5012 5013
 
 # Healthcheck - verify tickerplant port is open
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
