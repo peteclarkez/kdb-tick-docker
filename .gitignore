@@ -5,4 +5,5 @@ sym20*
 *.env
 !*.env.example
 data/
-scripts/
+logs/
+tplogs/

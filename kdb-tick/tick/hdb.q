@@ -47,4 +47,11 @@ getSyms:{$[`trade in tables`.;asc distinct exec sym from trade;`symbol$()]};
 / Utility function to get table schema
 getSchema:{[tbl] $[tbl in tables`.;meta tbl;()]};
 
+/ Load custom HDB functions from /scripts if available
+scriptsDir:$[count s:getenv`TICK_SCRIPTS_DIR;s;"/scripts"];
+customHdb:scriptsDir,"/hdb_custom.q";
+if[(hsym`$customHdb)~key hsym`$customHdb;
+  -1 "Loading custom HDB functions from ",customHdb;
+  system"l ",customHdb];
+
 -1 "HDB ready on port ",string system "p";

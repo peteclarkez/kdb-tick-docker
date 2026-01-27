@@ -14,7 +14,13 @@ services:
       - "${HDB_PORT:-5012}:5012"
       - "${GW_PORT:-5013}:5013"
     volumes:
-      - ./data:/data/tick
+      # HDB data (date partitions, sym file)
+      - ./data:/data
+      # Application logs (tick.log, rdb.log, hdb.log, gw.log, feed.log)
+      - ./logs:/logs
+      # Tickerplant binary event logs
+      - ./tplogs:/tplogs
+      # User customization scripts (sym.q required, feed.q optional)
       - ./scripts:/scripts
     environment:
       # Runtime license override (optional - uses build-time license if not set)
@@ -24,6 +30,11 @@ services:
       - RDB_PORT=${RDB_PORT:-5011}
       - HDB_PORT=${HDB_PORT:-5012}
       - GW_PORT=${GW_PORT:-5013}
+      # Mount point configuration
+      - TICK_DATA_DIR=/data
+      - TICK_LOG_DIR=/logs
+      - TICK_TPLOG_DIR=/tplogs
+      - TICK_SCRIPTS_DIR=/scripts
     healthcheck:
       test: ["CMD", "lsof", "-i", ":5010"]
       interval: 30s

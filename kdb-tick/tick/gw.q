@@ -177,6 +177,13 @@ reloadHDB:{
   if[null h:connectHDB[];:-1 "Error: Cannot connect to HDB";`error];
   @[h;"system\"l .\"";{-1 "HDB reload error: ",x;`error}]};
 
+/ Load custom Gateway functions from /scripts if available
+scriptsDir:$[count s:getenv`TICK_SCRIPTS_DIR;s;"/scripts"];
+customGw:scriptsDir,"/gw_custom.q";
+if[(hsym`$customGw)~key hsym`$customGw;
+  -1 "Loading custom Gateway functions from ",customGw;
+  system"l ",customGw];
+
 -1 "";
 -1 "=== Gateway Ready ===";
 -1 "Port: ",string system "p";
