@@ -177,6 +177,33 @@ reloadHDB:{
   if[null h:connectHDB[];:-1 "Error: Cannot connect to HDB";`error];
   @[h;"system\"l .\"";{-1 "HDB reload error: ",x;`error}]};
 
+/=============================================================================
+/ HTTP API - enables curl/REST access
+/=============================================================================
+
+/ HTTP GET handler - parse query string and execute
+/ Example: curl "http://localhost:5013?query=status[]"
+.z.ph:{[x]
+  / Parse the query string
+  q:first x;
+  / Extract query parameter
+  params:"&" vs last "?" vs q;
+  qry:first params where params like "query=*";
+  if[0=count qry; :"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n{\"error\":\"Missing query parameter. Use ?query=...\"}"];
+  qry:6_qry;  / Remove "query=" prefix
+  qry:.h.uh qry;  / URL decode
+  / Execute and return JSON
+  res:@[{.j.j value x};qry;{.j.j `error`message!("error";x)}];
+  "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n",res
+ };
+
+/ Simple health check endpoint
+.z.pp:{[x]
+  body:last x;
+  res:@[{.j.j value x};body;{.j.j `error`message!("error";x)}];
+  "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n",res
+ };
+
 -1 "";
 -1 "=== Gateway Ready ===";
 -1 "Port: ",string system "p";
