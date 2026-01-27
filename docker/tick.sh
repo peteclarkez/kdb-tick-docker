@@ -4,6 +4,15 @@
 
 set -e
 
+# Source the license setup script to handle runtime license override
+# This allows KX_LICENSE_B64 env var to override the build-time license
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/kx-license.sh" ]]; then
+    source "${SCRIPT_DIR}/kx-license.sh"
+elif [[ -f "/etc/profile.d/kx-license.sh" ]]; then
+    source "/etc/profile.d/kx-license.sh"
+fi
+
 # Use environment variables with defaults
 TICK_HOME="${Q_TICKHOME:-/opt/kx/kdb-tick}"
 DATA_DIR="${TICK_DATA_DIR:-/data/tick}"
