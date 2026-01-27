@@ -82,14 +82,14 @@ docker build \
 **Option A: Using Docker Compose (Recommended)**
 
 ```bash
-# Build and run with docker-compose
-docker-compose up -d
+# Build and run with docker compose
+docker compose --env-file kdbx.env up -d --build
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop
-docker-compose down
+docker compose --env-file kdbx.env down
 ```
 
 **Option B: Using Docker directly**
@@ -110,7 +110,27 @@ docker run -d \
 
 The gateway provides a unified interface to query both real-time (RDB) and historical (HDB) data.
 
-### Connect to Gateway
+### HTTP API (curl)
+
+KDB+ has a built-in HTTP server on the same port as IPC. Query using `http://host:port?<q-expression>`:
+
+```bash
+# Check connection status
+curl "http://localhost:5013?status[]"
+
+# Get today's trade count
+curl "http://localhost:5013?count%20getTodayTrades[\`]"
+
+# Get recent trades (URL encode: ` = %60, [ = %5B, ] = %5D, # = %23)
+curl "http://localhost:5013?-5%23getTodayTrades[\`]"
+
+# Get VWAP
+curl "http://localhost:5013?getVWAP[.z.D;.z.D;\`AAPL]"
+```
+
+Responses are HTML-formatted. See [KX HTTP documentation](https://code.kx.com/q/kb/http/).
+
+### Connect via IPC
 
 ```q
 // From q
