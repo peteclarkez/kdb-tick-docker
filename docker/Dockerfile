@@ -72,6 +72,12 @@ RUN mkdir -p ${Q_TICKHOME}/tick \
     chown -R kdb:kdb ${Q_TICKHOME} /data /scripts && \
     chmod -R 775 ${Q_TICKHOME} /data /scripts
 
+# Copy license setup script to /etc/profile.d for interactive shells
+# and to tick home for sourcing in tick.sh
+COPY docker/kx-license.sh /etc/profile.d/kx-license.sh
+COPY --chown=kdb:kdb docker/kx-license.sh ${Q_TICKHOME}/kx-license.sh
+RUN chmod +x /etc/profile.d/kx-license.sh ${Q_TICKHOME}/kx-license.sh
+
 # Switch to kdb user for venv setup
 USER kdb
 WORKDIR /home/kdb

@@ -4,6 +4,15 @@
 
 set -e
 
+# Source the license setup script to handle runtime license override
+# This allows KX_LICENSE_B64 env var to override the build-time license
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/kx-license.sh" ]]; then
+    source "${SCRIPT_DIR}/kx-license.sh"
+elif [[ -f "/etc/profile.d/kx-license.sh" ]]; then
+    source "/etc/profile.d/kx-license.sh"
+fi
+
 # Use environment variables with defaults
 TICK_HOME="${Q_TICKHOME:-/opt/kx/kdb-tick}"
 DATA_DIR="${TICK_DATA_DIR:-/data/tick}"
@@ -81,7 +90,11 @@ echo ""
 echo "Process status:"
 ps aux | grep -E "q (tick|feed)" | grep -v grep || true
 echo ""
-echo "Tailing tickerplant log..."
+echo "Tailing all logs..."
 
-# Keep container running and show tick log
-tail -f "${TICK_HOME}/logs/tick.log"
+# Keep container running and show all logs
+tail -f "${TICK_HOME}/logs/tick.log" \
+       "${TICK_HOME}/logs/rdb.log" \
+       "${TICK_HOME}/logs/hdb.log" \
+       "${TICK_HOME}/logs/gw.log" \
+       "${TICK_HOME}/logs/feed.log"

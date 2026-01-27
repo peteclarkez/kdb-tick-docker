@@ -170,11 +170,29 @@ h"status[]"
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `KX_LICENSE_B64` | (build-time) | Override license at runtime (base64-encoded) |
 | `TICK_PORT` | 5010 | Tickerplant port |
 | `RDB_PORT` | 5011 | RDB port |
 | `HDB_PORT` | 5012 | HDB port |
 | `GW_PORT` | 5013 | Gateway port |
 | `TICK_DATA_DIR` | /data/tick | Data storage directory |
+
+### Runtime License Override
+
+You can override the build-time license by passing `KX_LICENSE_B64` at runtime:
+
+```bash
+docker run -d \
+  --name kdbx-tick \
+  -e KX_LICENSE_B64="your_base64_license_here" \
+  -p 5010:5010 -p 5011:5011 -p 5012:5012 -p 5013:5013 \
+  kdbx-tick
+```
+
+This is useful for:
+- Using different licenses in different environments (dev/staging/prod)
+- Updating an expired license without rebuilding the image
+- Sharing images without embedding licenses
 
 ## Volume Mounts
 
