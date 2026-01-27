@@ -79,6 +79,21 @@ docker build \
 
 ### 3. Run the Container
 
+**Option A: Using Docker Compose (Recommended)**
+
+```bash
+# Build and run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+**Option B: Using Docker directly**
+
 ```bash
 docker run -d \
   --name kdbx-tick \
@@ -123,6 +138,9 @@ gw = kx.SyncQConnection(host='localhost', port=5013)
 | `getOHLC[sd;ed;ids]` | Open/High/Low/Close bars |
 | `status[]` | Connection status |
 | `reconnect[]` | Reconnect to RDB/HDB |
+| `rdbStats[]` | RDB record counts and date |
+| `triggerEOD[]` | Manual end-of-day save |
+| `reloadHDB[]` | Reload HDB data |
 
 ### Examples
 
@@ -146,6 +164,49 @@ h"getOHLC[.z.D-30;.z.D;`AAPL]"
 
 // Check connection status
 h"status[]"
+```
+
+## HDB Persistence
+
+At end-of-day (midnight), the RDB automatically saves data to the HDB and clears its in-memory tables. The HDB then reloads to pick up the new data.
+
+### Manual End-of-Day Save
+
+For testing, you can trigger an immediate end-of-day save via the gateway:
+
+```q
+h:hopen `:localhost:5013
+
+// Check current RDB stats
+h"rdbStats[]"
+
+// Trigger manual EOD save (WARNING: clears RDB data!)
+h"triggerEOD[]"
+
+// Reload HDB if needed
+h"reloadHDB[]"
+```
+
+### Data Directory Structure
+
+After end-of-day saves, the data directory will contain:
+```
+/data/tick/
+├── sym2024.01.27        # Tickerplant log
+├── 2024.01.27/          # Date partition
+│   ├── trade/           # Trade table
+│   │   ├── time
+│   │   ├── sym
+│   │   ├── price
+│   │   └── size
+│   └── quote/           # Quote table
+│       ├── time
+│       ├── sym
+│       ├── bid
+│       ├── ask
+│       ├── bsize
+│       └── asize
+└── sym                  # Symbol file
 ```
 
 ## Ports

@@ -150,6 +150,33 @@ reconnect:{
   connectHDB[];
   status[]};
 
+/=============================================================================
+/ HDB PERSISTENCE FUNCTIONS
+/=============================================================================
+
+/ Get RDB statistics (record counts, current date)
+rdbStats:{
+  if[null h:connectRDB[];:()];
+  @[h;"rdbStats[]";{-1 "RDB stats error: ",x;()}]};
+
+/ Trigger manual end-of-day save
+/ This saves RDB data to HDB and clears RDB tables
+/ WARNING: Use with caution - this will clear all RDB in-memory data!
+triggerEOD:{
+  -1 "Requesting end-of-day save from RDB...";
+  if[null h:connectRDB[];:-1 "Error: Cannot connect to RDB";`error];
+  res:@[h;"triggerEOD[]";{-1 "EOD error: ",x;`error}];
+  if[res~`ok;
+    -1 "EOD complete - reconnecting to HDB to pick up new data...";
+    h_hdb::0N;
+    connectHDB[]];
+  res};
+
+/ Reload HDB (useful after manual data changes)
+reloadHDB:{
+  if[null h:connectHDB[];:-1 "Error: Cannot connect to HDB";`error];
+  @[h;"system\"l .\"";{-1 "HDB reload error: ",x;`error}]};
+
 -1 "";
 -1 "=== Gateway Ready ===";
 -1 "Port: ",string system "p";
@@ -157,14 +184,21 @@ reconnect:{
 -1 "HDB: ",hdb_port," (connected: ",string[not null h_hdb],")";
 -1 "";
 -1 "Available functions:";
--1 "  getTradeData[sd;ed;ids]  - Get trades between dates for symbols";
--1 "  getQuoteData[sd;ed;ids]  - Get quotes between dates for symbols";
--1 "  getData[tbl;sd;ed;ids]   - Generic table query";
--1 "  getTodayTrades[ids]      - Today's trades";
--1 "  getRecentTrades[days;ids]- Last N days of trades";
--1 "  getVWAP[sd;ed;ids]       - Volume weighted average price";
--1 "  getOHLC[sd;ed;ids]       - Open/High/Low/Close bars";
--1 "  status[]                 - Connection status";
--1 "  reconnect[]              - Reconnect to RDB/HDB";
+-1 "  Query:";
+-1 "    getTradeData[sd;ed;ids]  - Get trades between dates for symbols";
+-1 "    getQuoteData[sd;ed;ids]  - Get quotes between dates for symbols";
+-1 "    getData[tbl;sd;ed;ids]   - Generic table query";
+-1 "    getTodayTrades[ids]      - Today's trades";
+-1 "    getTodayQuotes[ids]      - Today's quotes";
+-1 "    getRecentTrades[days;ids]- Last N days of trades";
+-1 "  Analytics:";
+-1 "    getVWAP[sd;ed;ids]       - Volume weighted average price";
+-1 "    getOHLC[sd;ed;ids]       - Open/High/Low/Close bars";
+-1 "  Admin:";
+-1 "    status[]                 - Connection status";
+-1 "    reconnect[]              - Reconnect to RDB/HDB";
+-1 "    rdbStats[]               - RDB record counts and date";
+-1 "    triggerEOD[]             - Manual end-of-day save (saves RDB to HDB)";
+-1 "    reloadHDB[]              - Reload HDB data";
 -1 "";
 -1 "Example: getTradeData[.z.D-7;.z.D;`AAPL`MSFT]";

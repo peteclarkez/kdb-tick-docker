@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  kdbx-tick:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        KX_BEARER_TOKEN: ${KX_BEARER_TOKEN}
+        KX_LICENSE_B64: ${KX_LICENSE_B64}
+    image: kdbx-tick:latest
+    container_name: kdbx-tick
+    ports:
+      - "${TICK_PORT:-5010}:5010"
+      - "${RDB_PORT:-5011}:5011"
+      - "${HDB_PORT:-5012}:5012"
+      - "${GW_PORT:-5013}:5013"
+    volumes:
+      - ./data:/data/tick
+      - ./scripts:/scripts
+    environment:
+      # Runtime license override (optional - uses build-time license if not set)
+      - KX_LICENSE_B64=${KX_LICENSE_B64:-}
+      # Port configuration (optional - uses defaults if not set)
+      - TICK_PORT=${TICK_PORT:-5010}
+      - RDB_PORT=${RDB_PORT:-5011}
+      - HDB_PORT=${HDB_PORT:-5012}
+      - GW_PORT=${GW_PORT:-5013}
+    healthcheck:
+      test: ["CMD", "lsof", "-i", ":5010"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped

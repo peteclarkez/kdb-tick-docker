@@ -69,13 +69,17 @@ docker run -d \
   kdbx-tick
 ```
 
-## Status: WORKING
+## Status: COMPLETE
 
-The tick system is fully functional:
+The tick system is fully functional with all components:
 - Tickerplant listening on port 5010
 - RDB listening on port 5011, subscribed to tickerplant
-- Feed handler publishing trade data every 10 seconds
-- Data flowing correctly through the system
+- HDB listening on port 5012, serves historical data
+- Gateway listening on port 5013, unified query interface
+- Feed handler publishing trade AND quote data every 10 seconds
+- HDB persistence via end-of-day save (manual trigger available via `triggerEOD[]`)
+- Docker Compose for easy deployment
+- Runtime license override support
 - Healthcheck passing
 
 ### Previous Issue: RDB subscription error (RESOLVED)
@@ -89,12 +93,16 @@ The RDB was failing with `.u.sub` error. Root cause: the `r.q` script internally
 | File | Status |
 |------|--------|
 | docker/Dockerfile | Rewritten - 3-stage build |
-| docker/tick.sh | Updated - configurable, fixed connection strings |
-| kdb-tick/tick/feed.q | Updated - accepts port argument |
-| README.md | Rewritten - new documentation |
+| docker/tick.sh | Updated - starts all 5 processes, tails all logs |
+| docker/kx-license.sh | New - runtime license override |
+| docker-compose.yml | New - easy deployment |
+| kdb-tick/tick/feed.q | Rewritten - publishes trade AND quote data |
+| kdb-tick/tick/r.q | Updated - selectFunc, triggerEOD, rdbStats |
+| kdb-tick/tick/hdb.q | New - historical database loader |
+| kdb-tick/tick/gw.q | New - gateway with unified query functions |
+| README.md | Rewritten - comprehensive documentation |
 | .gitignore | Updated - added patterns |
 | kdbx.env.example | New - credential template |
-| mytick.env.example | Deleted - replaced by kdbx.env.example |
 
 ## Git Status
 
@@ -107,6 +115,8 @@ The RDB was failing with `.u.sub` error. Root cause: the `r.q` script internally
 1. ~~Debug the RDB subscription error in r.q~~ DONE
 2. ~~Verify feed handler is publishing data correctly~~ DONE
 3. ~~Test end-to-end data flow: feed → tickerplant → RDB~~ DONE
-4. Enable HDB for historical data persistence
-5. Add docker-compose for easier deployment
-6. Consider adding more feed data types (quotes)
+4. ~~Enable HDB for historical data persistence~~ DONE
+5. ~~Add docker-compose for easier deployment~~ DONE
+6. ~~Consider adding more feed data types (quotes)~~ DONE
+
+All next steps completed!

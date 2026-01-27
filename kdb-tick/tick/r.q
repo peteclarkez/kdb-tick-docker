@@ -37,3 +37,21 @@ selectFunc:{[tbl;sd;ed;ids]
   ]
  };
 
+/ Manual end-of-day trigger for testing HDB persistence
+/ Saves current day's data to HDB and clears RDB tables
+/ WARNING: This will clear all in-memory data!
+triggerEOD:{
+  -1 "Triggering manual end-of-day save for date: ",string .u.d;
+  -1 "Tables to save: ",", " sv string tables`.;
+  -1 "Trade count: ",string count trade;
+  -1 "Quote count: ",string count quote;
+  .u.end[.u.d];
+  -1 "End-of-day complete - data saved to HDB";
+  `ok
+ };
+
+/ Get current RDB statistics
+rdbStats:{
+  `date`trade_count`quote_count`tables!(.u.d;count trade;count quote;tables`.)
+ };
+
