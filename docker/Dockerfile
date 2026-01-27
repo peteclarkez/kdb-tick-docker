@@ -38,10 +38,10 @@ RUN if [ -z "$KX_BEARER_TOKEN" ]; then echo "KX_BEARER_TOKEN is required" && exi
 
 WORKDIR /root
 
-# Download and run the KDB-X installer
+# Download and run the KDB-X installer in non-interactive mode
 RUN curl -sLO --oauth2-bearer "$KX_BEARER_TOKEN" \
     https://portal.dl.kx.com/assets/raw/kdb-x/install_kdb/~latest~/install_kdb.sh && \
-    bash install_kdb.sh --b64lic "$KX_LICENSE_B64" && \
+    bash install_kdb.sh -y --b64lic "$KX_LICENSE_B64" && \
     rm -f install_kdb.sh
 
 # =============================================================================
@@ -51,9 +51,10 @@ RUN curl -sLO --oauth2-bearer "$KX_BEARER_TOKEN" \
 FROM base AS runtime
 
 # Environment variables for KDB-X
-ENV QHOME=/home/kdb/.kx/kdb
-ENV QLIC=/home/kdb/.kx/license
-ENV PATH="${QHOME}/l64:${PATH}"
+# KDB-X installs to ~/.kx with bin/ containing the q executable
+ENV QHOME=/home/kdb/.kx
+ENV QLIC=/home/kdb/.kx
+ENV PATH="/home/kdb/.kx/bin:${PATH}"
 ENV Q_TICKHOME=/opt/kx/kdb-tick
 ENV VIRTUAL_ENV=/home/kdb/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"

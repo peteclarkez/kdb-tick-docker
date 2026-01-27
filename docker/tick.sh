@@ -37,6 +37,7 @@ nohup rlwrap q tick.q sym "${DATA_DIR}" -p "${TICK_PORT}" \
 sleep 2
 
 # Start RDB (Real-time Database) on port 5011 by default
+# Note: r.q expects ":port" format - it adds another colon internally for localhost
 echo "Starting RDB on port ${RDB_PORT}..."
 nohup rlwrap q tick/r.q ":${TICK_PORT}" -p "${RDB_PORT}" \
     < /dev/null > "${TICK_HOME}/logs/rdb.log" 2>&1 &
@@ -47,8 +48,9 @@ nohup rlwrap q tick/r.q ":${TICK_PORT}" -p "${RDB_PORT}" \
 #     < /dev/null > "${TICK_HOME}/logs/hdb.log" 2>&1 &
 
 # Start Feed Handler (data publisher)
+# Note: feed.q expects "::port" format for localhost connection
 echo "Starting Feed Handler..."
-nohup rlwrap q tick/feed.q ":${TICK_PORT}" \
+nohup rlwrap q tick/feed.q "::${TICK_PORT}" \
     < /dev/null > "${TICK_HOME}/logs/feed.log" 2>&1 &
 
 echo "KDB-X Tick System started successfully"
