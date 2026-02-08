@@ -28,24 +28,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # =============================================================================
 FROM base AS builder
 
-# Build arguments for KX authentication
-ARG KX_BEARER_TOKEN
-ARG KX_LICENSE_B64
-
-# Verify build arguments are provided
-RUN if [ -z "$KX_BEARER_TOKEN" ]; then echo "KX_BEARER_TOKEN is required" && exit 1; fi && \
-    if [ -z "$KX_LICENSE_B64" ]; then echo "KX_LICENSE_B64 is required" && exit 1; fi
-
 WORKDIR /root
 
 # Download and run the KDB-X installer in non-interactive mode
-RUN curl -sLO --oauth2-bearer "$KX_BEARER_TOKEN" \
-    https://portal.dl.kx.com/assets/raw/kdb-x/install_kdb/~latest~/install_kdb.sh && \
+# Uses BuildKit secrets so credentials are never stored in image layers
+# Remove license file to prevent it from being included in the final image
+RUN --mount=type=secret,id=kx_bearer_token \
+    --mount=type=secret,id=kx_license_b64 \
+    KX_BEARER_TOKEN="$(cat /run/secrets/kx_bearer_token)" && \
+    KX_LICENSE_B64="$(cat /run/secrets/kx_license_b64)" && \
+    if [ -z "$KX_BEARER_TOKEN" ]; then echo "ERROR: kx_bearer_token secret is required" && exit 1; fi && \
+    if [ -z "$KX_LICENSE_B64" ]; then echo "ERROR: kx_license_b64 secret is required" && exit 1; fi && \
+    curl -sLO --oauth2-bearer "$KX_BEARER_TOKEN" \
+      https://portal.dl.kx.com/assets/raw/kdb-x/install_kdb/~latest~/install_kdb.sh && \
     bash install_kdb.sh -y --b64lic "$KX_LICENSE_B64" && \
-    rm -f install_kdb.sh
+    rm -f install_kdb.sh && \
+    rm -f /root/.kx/kc.lic
 
-#R Remove license file to prevent it from being included in the final image
-RUN rm -f /root/.kx/kc.lic
 # =============================================================================
 # Stage 3: Runtime Stage
 # Production image with kdb user and tick system

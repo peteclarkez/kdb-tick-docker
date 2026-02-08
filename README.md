@@ -94,6 +94,60 @@ docker compose logs -f
 docker compose --env-file kdbx.env down
 ```
 
+## Multi-Architecture Builds
+
+The image supports `linux/amd64` and `linux/arm64`. Pre-built images are available on Docker Hub.
+
+### Pulling Pre-Built Images
+
+```bash
+docker pull peteclarkez/kdbx-tick:latest
+```
+
+Then deploy with docker compose (no `--build` flag):
+
+```bash
+source kdbx.env
+docker compose --env-file kdbx.env up -d
+```
+
+### Building Multi-Arch Images
+
+One-time host setup:
+
+```bash
+# Register QEMU handlers for cross-platform emulation
+docker run --privileged --rm tonistiigi/binfmt --install all
+
+# Create a buildx builder with multi-platform support
+docker buildx create --name multiarch --driver docker-container --bootstrap --use
+
+# Log in to Docker Hub
+docker login
+```
+
+Build and push (`kdbx.env` is auto-sourced):
+
+```bash
+./build.sh              # pushes with tag 'latest'
+./build.sh v1.0.0       # pushes with tag 'v1.0.0'
+```
+
+The `DOCKER_REPO`, `PLATFORMS`, and `BUILDER_NAME` environment variables can be set to override defaults.
+
+### Automated Builds (GitHub Actions)
+
+Images are automatically built and pushed to Docker Hub when a version tag is pushed:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers a GitHub Actions workflow that builds for `linux/amd64` and `linux/arm64` and pushes to `peteclarkez/kdbx-tick` with semver tags (`1.0.0`, `1.0`, `1`, `latest`).
+
+Required GitHub secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `KX_BEARER_TOKEN`, `KX_LICENSE_B64`.
+
 ## Customization via /scripts
 
 ### Required: sym.q
@@ -212,6 +266,8 @@ h"triggerEOD[]"    // Save to HDB (clears RDB!)
 
 ### Build-time (Required)
 
+These are passed as BuildKit secrets (not build args) so they don't appear in image layer metadata:
+
 | Variable | Description |
 |----------|-------------|
 | `KX_BEARER_TOKEN` | OAuth2 bearer token from KX Developer Portal |
@@ -248,10 +304,10 @@ docker inspect --format='{{.State.Health.Status}}' kdbx-tick
 
 ## Docker Image Architecture
 
-The Dockerfile uses a multi-stage build:
+The Dockerfile uses a multi-stage build supporting `linux/amd64` and `linux/arm64`:
 
 1. **Base**: Ubuntu 24.04 + Python 3.13 + utilities
-2. **Builder**: Downloads and installs KDB-X
+2. **Builder**: Downloads and installs KDB-X (uses BuildKit secrets for credentials)
 3. **Runtime**: kdb user, tick system, volume mounts
 
 Core tick scripts (tick.q, r.q, hdb.q, gw.q, u.q) are built into the image.

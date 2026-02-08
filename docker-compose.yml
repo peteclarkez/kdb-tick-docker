@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      args:
-        KX_BEARER_TOKEN: ${KX_BEARER_TOKEN}
-        KX_LICENSE_B64: ${KX_LICENSE_B64}
-    image: kdbx-tick:latest
+      secrets:
+        - kx_bearer_token
+        - kx_license_b64
+    image: ${DOCKER_REPO:-peteclarkez/kdbx-tick}:${IMAGE_TAG:-latest}
     container_name: kdbx-tick
     ports:
       - "${TICK_PORT:-5010}:5010"
@@ -42,3 +42,9 @@ services:
       start_period: 30s
       retries: 3
     restart: unless-stopped
+
+secrets:
+  kx_bearer_token:
+    environment: KX_BEARER_TOKEN
+  kx_license_b64:
+    environment: KX_LICENSE_B64
