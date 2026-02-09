@@ -1,0 +1,50 @@
+services:
+  kdbx-tick:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - kx_bearer_token
+        - kx_license_b64
+    image: ${DOCKER_REPO:-peteclarkez/kdbx-tick}:${IMAGE_TAG:-latest}
+    container_name: kdbx-tick
+    ports:
+      - "${TICK_PORT:-5010}:5010"
+      - "${RDB_PORT:-5011}:5011"
+      - "${HDB_PORT:-5012}:5012"
+      - "${GW_PORT:-5013}:5013"
+    volumes:
+      # HDB data (date partitions, sym file)
+      - ./data:/data
+      # Application logs (tick.log, rdb.log, hdb.log, gw.log, feed.log)
+      - ./logs:/logs
+      # Tickerplant binary event logs
+      - ./tplogs:/tplogs
+      # User customization scripts (sym.q required, feed.q optional)
+      - ./scripts:/scripts
+    environment:
+      # Runtime license override (optional - uses build-time license if not set)
+      - KX_LICENSE_B64=${KX_LICENSE_B64:-}
+      # Port configuration (optional - uses defaults if not set)
+      - TICK_PORT=${TICK_PORT:-5010}
+      - RDB_PORT=${RDB_PORT:-5011}
+      - HDB_PORT=${HDB_PORT:-5012}
+      - GW_PORT=${GW_PORT:-5013}
+      # Mount point configuration
+      - TICK_DATA_DIR=/data
+      - TICK_LOG_DIR=/logs
+      - TICK_TPLOG_DIR=/tplogs
+      - TICK_SCRIPTS_DIR=/scripts
+    healthcheck:
+      test: ["CMD", "lsof", "-i", ":5010"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
+secrets:
+  kx_bearer_token:
+    environment: KX_BEARER_TOKEN
+  kx_license_b64:
+    environment: KX_LICENSE_B64

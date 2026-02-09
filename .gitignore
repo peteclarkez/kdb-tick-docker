@@ -1,6 +1,10 @@
 *.log
-sym20*
+sym*
 ./kdb-tick/sym
 .DS_Store
 *.env
-data/*
+!*.env.example
+
+data/
+logs/
+tplogs/

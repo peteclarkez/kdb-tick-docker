@@ -20,7 +20,10 @@
 "kdb+tick 2.8 2014.03.12"
 
 /q tick.q SRC [DST] [-p 5010] [-o h]
-system"l tick/",(src:first .z.x,enlist"sym"),".q"
+/ Load schema from /scripts mount point (externally provided)
+scriptsDir:$[count s:getenv`TICK_SCRIPTS_DIR;s;"/scripts"];
+src:first .z.x,enlist"sym";
+system"l ",scriptsDir,"/",src,".q"
 
 if[not system"p";system"p 5010"]
 
