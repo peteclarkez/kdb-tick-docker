@@ -8,6 +8,11 @@ As well as taking the tick code directly, this repo also relies on the work done
 Forked from https://github.com/KxSystems/kdb-tick
 Using a base build from https://github.com/KxSystems/embedPy
 
+* tick.q: vanilla tickerplant script, used by kdb+
+* tick/u.q: pub/sub script used by tick.q
+* tick/r.q: vanilla RDB script, used by kdb+
+
+See http://code.kx.com/q/ for details
 
 # Tick changes
 
