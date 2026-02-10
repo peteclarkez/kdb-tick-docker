@@ -29,7 +29,30 @@ if[not system"p";system"p 5010"]
 
 \l tick/u.q
 \d .u
-ld:{if[not type key L::`$(-10_string L),string x;.[L;();:;()]];i::j::-11!(-2;L);if[0<=type i;-2 (string L)," is a corrupt log. Truncate to length ",(string last i)," and restart";exit 1];hopen L};
+//  ld:{if[not type key L::`$(-10_string L),string x;.[L;();:;()]];i::j::-11!(-2;L);if[0<=type i;-2 (string L)," is a corrupt log. Truncate to length ",(string last i)," and restart";exit 1];hopen L};
+
+// .u.ld - initialises TP log file
+// @Params: 
+// x: The current date
+// @Returns: The handle to the log file
+ld:{
+    // Check if TP log .u.L exists, create new one if not
+    if[not type key L::`$(-10_string L), string x;
+        .[L;();:;()]
+    ];
+    // Read valid chunks of the log file
+    i::j::-11!(-2;L);
+    // If invalid entries found, recover valid messages and truncate
+    if[0<=type i;
+        -2 (string L)," is a corrupt log. Recovering ",(string first i)," valid message(s), truncating at byte ",(string last i);
+        @[system; "truncate -s ",(string last i)," ",1_string L;
+            {-2 "Failed to truncate corrupt log: ",x; exit 1}];
+        i::j::first i;
+    ];
+    // Open log handle for writing
+    hopen L
+ };
+
 tick:{init[];if[not min(`time`sym~2#key flip value@)each t;'`timesym];@[;`sym;`g#]each t;d::.z.D;if[l::count y;L::`$":",y,"/",x,10#".";l::ld d]};
 
 endofday:{end d;d+:1;if[l;hclose l;l::0(`.u.ld;d)]};
