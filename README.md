@@ -102,3 +102,11 @@ For build instructions, multi-architecture builds, customization, gateway usage,
 - [PyKX Documentation](https://code.kx.com/pykx/)
 - [Original kdb+tick](https://github.com/KxSystems/kdb-tick)
 - [KX Architecture Course](https://github.com/KxSystems/kdb-architecture-course)
+
+## Acknowledgements
+
+Thanks to other kdb tick developers who's forks have educated and inspired some of this work
+
+- https://github.com/MichaelaWoods/kdb-architecture - gateways
+- https://github.com/kevin154/kdb-tick-annotated - annotation & comments
+- https://github.com/mkst/kdb-tick - annotation & comments
