@@ -45,6 +45,12 @@ getQuoteData:{[sd;ed;ids]
 / CONVENIENCE FUNCTIONS
 /=============================================================================
 
+
+/ Get available symbols from RDB
+getSymbols:{
+  if[null h:connectRDB[];:`symbol$()];
+  @[h;"distinct exec sym from trade";{`symbol$()}]};
+
 / Get today's trades for symbols
 getTodayTrades:{[ids] getTradeData[.z.D;.z.D;ids]};
 

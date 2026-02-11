@@ -61,11 +61,6 @@ getData:{[tbl;sd;ed;ids]
 status:{
   `rdb`hdb!(not null h_rdb;not null h_hdb)};
 
-/ Get available symbols from RDB
-getSymbols:{
-  if[null h:connectRDB[];:`symbol$()];
-  @[h;"distinct exec sym from trade";{`symbol$()}]};
-
 / Get date range from HDB
 getDateRange:{
   if[null h:connectHDB[];:()];
@@ -131,5 +126,7 @@ if[(hsym`$customGw)~key hsym`$customGw;
 -1 "    rdbStats[]               - RDB record counts and date";
 -1 "    triggerEOD[]             - Manual end-of-day save (saves RDB to HDB)";
 -1 "    reloadHDB[]              - Reload HDB data";
+-1 "  Data Queries:";
+-1 "    getData[table;start;end;ids] - Unified query for RDB and HDB (e.g. getData[`trade;.z.D-7;.z.D;`AAPL`MSFT])";
 -1 "";
--1 "Example: getTradeData[.z.D-7;.z.D;`AAPL`MSFT]";
+-1 "Example: getData[`trade;.z.D-7;.z.D;`AAPL`MSFT]";
