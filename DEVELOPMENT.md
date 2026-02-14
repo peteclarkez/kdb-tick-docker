@@ -2,11 +2,15 @@
 
 ## Customization via /scripts
 
-### Required: sym.q
+### Required: Schema file (default: sym.q)
 
-Defines table schemas. Must be mounted at `/scripts/sym.q`:
+Defines table schemas. Must be mounted at `/scripts/<schema>.q` (default `/scripts/sym.q`).
 
->You can use different filenames for the schema, but his must be reflected in the launch commands to use `tick.q <schemafile>.q`
+To use a different schema filename, set the `TICK_SCHEMA` environment variable:
+
+```bash
+TICK_SCHEMA=myschema  # will load /scripts/myschema.q
+```
 
 ```q
 / Table schemas
@@ -140,6 +144,7 @@ These are passed as BuildKit secrets (not build args) so they don't appear in im
 | `TICK_DATA_DIR` | /data | HDB data directory |
 | `TICK_LOG_DIR` | /logs | Application logs directory |
 | `TICK_TPLOG_DIR` | /tplogs | Tickerplant event logs |
+| `TICK_SCHEMA` | sym | Schema filename (without .q extension) |
 | `TICK_SCRIPTS_DIR` | /scripts | User scripts directory |
 | `TICK_TPLOG_PURGE_HOUR` | 3 | Hour of day (0-23) to run tplog purge |
 | `TICK_TPLOG_RETENTION_DAYS` | 5 | Number of days to retain tplog files |
