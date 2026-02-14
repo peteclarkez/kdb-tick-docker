@@ -53,7 +53,7 @@ mkdir -p data logs tplogs scripts
 
 ### 3. Add Required Scripts
 
-The `scripts/sym.q` file is **required** - it defines your table schemas:
+A schema file is **required** — it defines your table schemas. By default this is `sym.q` (configurable via `TICK_SCHEMA` env var):
 
 ```bash
 # Copy the example scripts

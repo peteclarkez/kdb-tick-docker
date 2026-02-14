@@ -23,6 +23,9 @@ LOG_DIR="${TICK_LOG_DIR:-/logs}"             # Application logs
 TPLOG_DIR="${TICK_TPLOG_DIR:-/tplogs}"       # Tickerplant event logs
 SCRIPTS_DIR="${TICK_SCRIPTS_DIR:-/scripts}"  # User customization scripts
 
+# Schema name (the .q file in SCRIPTS_DIR that defines table schemas)
+TICK_SCHEMA="${TICK_SCHEMA:-sym}"
+
 # Tplog purge settings
 TPLOG_PURGE_HOUR="${TICK_TPLOG_PURGE_HOUR:-3}"       # Hour of day to run purge (0-23)
 TPLOG_RETENTION_DAYS="${TICK_TPLOG_RETENTION_DAYS:-5}" # Days to retain tplogs
@@ -40,15 +43,15 @@ export TICK_SCRIPTS_DIR="${SCRIPTS_DIR}"
 cd "${TICK_HOME}"
 
 # Validate required files
-if [[ ! -f "${SCRIPTS_DIR}/sym.q" ]]; then
+if [[ ! -f "${SCRIPTS_DIR}/${TICK_SCHEMA}.q" ]]; then
     echo "============================================="
     echo "ERROR: Required file not found!"
     echo "============================================="
     echo ""
-    echo "The file ${SCRIPTS_DIR}/sym.q is required but was not found."
+    echo "The file ${SCRIPTS_DIR}/${TICK_SCHEMA}.q is required but was not found."
     echo ""
     echo "This file defines the table schemas (trade, quote, etc.) for your"
-    echo "tick system. You must mount a scripts directory containing sym.q."
+    echo "tick system. You must mount a scripts directory containing ${TICK_SCHEMA}.q."
     echo ""
     echo "Example:"
     echo "  docker run -v ./scripts:/scripts ..."
@@ -67,6 +70,7 @@ echo "============================================="
 echo "Starting KDB-X Tick System"
 echo "============================================="
 echo "Tick Home:    ${TICK_HOME}"
+echo "Schema:       ${TICK_SCHEMA}"
 echo ""
 echo "Mount Points:"
 echo "  Data (HDB):    ${DATA_DIR}"
@@ -91,7 +95,7 @@ touch "${LOG_DIR}/purge.log"
 # Start Tickerplant (Port 5010 by default)
 # Tickerplant writes event logs to TPLOG_DIR
 echo "Starting Tickerplant on port ${TICK_PORT}..."
-nohup rlwrap q tick.q sym "${TPLOG_DIR}" -p "${TICK_PORT}" \
+nohup rlwrap q tick.q "${TICK_SCHEMA}" "${TPLOG_DIR}" -p "${TICK_PORT}" \
     < /dev/null > "${LOG_DIR}/tick.log" 2>&1 &
 
 # Wait for tickerplant to be ready
