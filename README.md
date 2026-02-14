@@ -15,33 +15,14 @@ Components:
 
 ## Architecture
 
-```
-                    ┌─────────────┐
-                    │   Gateway   │ :5013
-                    │   (gw.q)    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-              ▼                         ▼
-       ┌─────────────┐          ┌─────────────┐
-       │     RDB     │          │     HDB     │
-       │    (r.q)    │ :5011    │   (hdb.q)   │ :5012
-       └──────┬──────┘          └─────────────┘
-              │                        ▲
-              │ subscribe              │ load
-              ▼                        │
-       ┌─────────────┐          ┌─────────────┐
-       │ Tickerplant │          │   /data     │
-       │  (tick.q)   │ :5010    │  (HDB data) │
-       └──────┬──────┘          └─────────────┘
-              │
-              │ publish
-              ▼
-       ┌─────────────┐
-       │    Feed     │
-       │  (feed.q)   │  ← from /scripts
-       └─────────────┘
+```mermaid
+graph BT
+    Feed["Feed Handler<br/>(feed.q)"] -->|publish| TP
+    TP["Tickerplant<br/>(tick.q) :5010"] -->|subscribe| RDB
+    RDB["RDB<br/>(r.q) :5011"] --> GW
+    HDB["HDB<br/>(hdb.q) :5012"] --> GW
+    GW["Gateway<br/>(gw.q) :5013"]
+    Data["/data<br/>(HDB data)"] -->|load| HDB
 ```
 
 ## Volume Mounts

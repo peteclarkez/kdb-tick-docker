@@ -23,6 +23,10 @@ LOG_DIR="${TICK_LOG_DIR:-/logs}"             # Application logs
 TPLOG_DIR="${TICK_TPLOG_DIR:-/tplogs}"       # Tickerplant event logs
 SCRIPTS_DIR="${TICK_SCRIPTS_DIR:-/scripts}"  # User customization scripts
 
+# Tplog purge settings
+TPLOG_PURGE_HOUR="${TICK_TPLOG_PURGE_HOUR:-3}"       # Hour of day to run purge (0-23)
+TPLOG_RETENTION_DAYS="${TICK_TPLOG_RETENTION_DAYS:-5}" # Days to retain tplogs
+
 # Ports
 TICK_PORT="${TICK_PORT:-5010}"
 RDB_PORT="${RDB_PORT:-5011}"
@@ -82,6 +86,7 @@ touch "${LOG_DIR}/tick.log"
 touch "${LOG_DIR}/rdb.log"
 touch "${LOG_DIR}/hdb.log"
 touch "${LOG_DIR}/gw.log"
+touch "${LOG_DIR}/purge.log"
 
 # Start Tickerplant (Port 5010 by default)
 # Tickerplant writes event logs to TPLOG_DIR
@@ -132,6 +137,22 @@ else
     echo "No feed.q found in ${SCRIPTS_DIR} - skipping feed handler"
 fi
 
+# Start tplog purge scheduler (runs daily at configured hour)
+echo "Starting tplog purge scheduler (${TPLOG_PURGE_HOUR}:00 daily, ${TPLOG_RETENTION_DAYS}-day retention)..."
+(
+    while true; do
+        # Calculate seconds until next target hour
+        now=$(date +%s)
+        target=$(date -d "today ${TPLOG_PURGE_HOUR}:00" +%s)
+        if [ "$now" -ge "$target" ]; then
+            target=$(date -d "tomorrow ${TPLOG_PURGE_HOUR}:00" +%s)
+        fi
+        sleep $(( target - now ))
+        "${TICK_HOME}/purge_tplogs.sh" "${TPLOG_DIR}" "${TPLOG_RETENTION_DAYS}" \
+            >> "${LOG_DIR}/purge.log" 2>&1
+    done
+) &
+
 echo ""
 echo "============================================="
 echo "KDB-X Tick System started successfully"
@@ -143,7 +164,7 @@ echo ""
 echo "Tailing logs..."
 
 # Build list of log files to tail (only existing ones)
-LOG_FILES="${LOG_DIR}/tick.log ${LOG_DIR}/rdb.log ${LOG_DIR}/hdb.log ${LOG_DIR}/gw.log"
+LOG_FILES="${LOG_DIR}/tick.log ${LOG_DIR}/rdb.log ${LOG_DIR}/hdb.log ${LOG_DIR}/gw.log ${LOG_DIR}/purge.log"
 if [[ -f "${LOG_DIR}/feed.log" ]]; then
     LOG_FILES="${LOG_FILES} ${LOG_DIR}/feed.log"
 fi

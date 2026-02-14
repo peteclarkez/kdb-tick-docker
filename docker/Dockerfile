@@ -97,8 +97,9 @@ RUN python3.13 -m venv ${VIRTUAL_ENV} && \
     ${VIRTUAL_ENV}/bin/pip install --upgrade --pre pykx && \
     python -c "import pykx as kx; kx.install_into_QHOME()"
 
-# Copy tick startup script
+# Copy tick startup and maintenance scripts
 COPY --chown=kdb:kdb docker/tick.sh ${Q_TICKHOME}/
+COPY --chown=kdb:kdb docker/purge_tplogs.sh ${Q_TICKHOME}/
 
 # Copy core tick scripts (excluding sym.q and feed.q which come from /scripts)
 COPY --chown=kdb:kdb kdb-tick/tick.q ${Q_TICKHOME}/
@@ -107,8 +108,8 @@ COPY --chown=kdb:kdb kdb-tick/tick/r.q ${Q_TICKHOME}/tick/
 COPY --chown=kdb:kdb kdb-tick/tick/hdb.q ${Q_TICKHOME}/tick/
 COPY --chown=kdb:kdb kdb-tick/tick/gw.q ${Q_TICKHOME}/tick/
 
-# Make tick.sh executable
-RUN chmod +x ${Q_TICKHOME}/tick.sh
+# Make scripts executable
+RUN chmod +x ${Q_TICKHOME}/tick.sh ${Q_TICKHOME}/purge_tplogs.sh
 
 # Volume mounts:
 # /data    - HDB data (date partitions, sym file)
