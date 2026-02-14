@@ -6,6 +6,8 @@
 
 Defines table schemas. Must be mounted at `/scripts/sym.q`:
 
+>You can use different filenames for the schema, but his must be reflected in the launch commands to use `tick.q <schemafile>.q`
+
 ```q
 / Table schemas
 trade:([]time:`timestamp$();sym:`symbol$();price:`float$();size:`int$())
@@ -111,7 +113,8 @@ h"triggerEOD[]"    // Save to HDB (clears RDB!)
 ├── rdb.log              # RDB application log
 ├── hdb.log              # HDB application log
 ├── gw.log               # Gateway application log
-└── feed.log             # Feed handler application log
+├── feed.log             # Feed handler application log
+└── purge.log            # Tplog purge job log
 ```
 
 ## Environment Variables
@@ -138,6 +141,8 @@ These are passed as BuildKit secrets (not build args) so they don't appear in im
 | `TICK_LOG_DIR` | /logs | Application logs directory |
 | `TICK_TPLOG_DIR` | /tplogs | Tickerplant event logs |
 | `TICK_SCRIPTS_DIR` | /scripts | User scripts directory |
+| `TICK_TPLOG_PURGE_HOUR` | 3 | Hour of day (0-23) to run tplog purge |
+| `TICK_TPLOG_RETENTION_DAYS` | 5 | Number of days to retain tplog files |
 
 ## Ports
 
