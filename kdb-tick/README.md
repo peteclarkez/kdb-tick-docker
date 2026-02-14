@@ -2,6 +2,13 @@
 
 Files previously at code.kx.com/wsvn/kx/kdb+tick
 
+Now at https://github.com/KxSystems/kdb-tick
+
+* tick.q: vanilla tickerplant script, used by kdb+
+* tick/u.q: pub/sub script used by tick.q
+* tick/r.q: vanilla RDB script, used by kdb+
+
+See http://code.kx.com/q/ for details
 
 ## Hot-linking
 
