@@ -1,5 +1,8 @@
 # KDB-X Tick Docker
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker Hub](https://img.shields.io/docker/pulls/peteclarkez/kdbx-tick)](https://hub.docker.com/r/peteclarkez/kdbx-tick)
+
 A dockerized kdb+tick data pipeline using KDB-X, the latest release of kdb+ from KX.
 
 ## Overview
@@ -76,6 +79,8 @@ docker compose --env-file kdbx.env down
 ```
 
 For build instructions, multi-architecture builds, customization, gateway usage, environment variables, and other developer documentation, see [DEVELOPMENT.md](DEVELOPMENT.md).
+
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## References
 

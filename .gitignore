@@ -1,6 +1,5 @@
 *.log
 sym*
-./kdb-tick/sym
 .DS_Store
 *.env
 !*.env.example
