@@ -121,6 +121,31 @@ h"triggerEOD[]"    // Save to HDB (clears RDB!)
 └── purge.log            # Tplog purge job log
 ```
 
+## Managing Secrets
+
+### What is protected and how
+
+**Build-time credentials** (`KX_BEARER_TOKEN`, `KX_LICENSE_B64`) are passed to Docker using `--mount=type=secret` (BuildKit), not `--build-arg`. This means:
+- They are mounted as files under `/run/secrets/` only for the duration of the `RUN` step that needs them
+- They are never written to any image layer and will not appear in `docker history` or the image manifest
+- The KDB-X license file (`kc.lic`) is explicitly deleted from the builder stage before it is copied into the runtime image, so the published image ships with no license baked in
+
+**The runtime license** is injected via the `KX_LICENSE_B64` environment variable at container start. `kx-license.sh` decodes it and writes `kc.lic` to disk inside the running container.
+
+### Runtime secret exposure
+
+When `KX_LICENSE_B64` is passed as a plain environment variable (via `-e` or docker-compose `environment:`), the value is visible to anyone who can run `docker inspect` on the host. For most self-hosted deployments this is acceptable.
+
+For stricter environments, consider:
+- **Docker Swarm secrets** — mount the license as a secret file and decode it in an entrypoint script
+- **A secrets manager** (Vault, AWS Secrets Manager, etc.) — fetch the value at container start rather than passing it as an env var
+
+### What never to do
+
+- Never pass `KX_BEARER_TOKEN` or `KX_LICENSE_B64` as `--build-arg` — they would be permanently visible in `docker history`
+- Never commit `kdbx.env` — it is gitignored for this reason
+- Never embed a license value directly in the Dockerfile or docker-compose.yml
+
 ## Environment Variables
 
 ### Build-time (Required)
