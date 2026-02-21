@@ -67,8 +67,9 @@ cp scripts/rdb_custom.q scripts/ # Optional: custom RDB functions
 
 ### 4. Build and Run
 
+**Using docker compose (recommended):**
+
 ```bash
-# Using docker compose (recommended)
 docker compose --env-file kdbx.env up -d --build
 
 # View logs
@@ -76,6 +77,32 @@ docker compose logs -f
 
 # Stop
 docker compose --env-file kdbx.env down
+```
+
+**Using docker run (pre-built image):**
+
+```bash
+source kdbx.env
+
+docker run -d \
+  --name kdbx-tick \
+  -p 5010:5010 \
+  -p 5011:5011 \
+  -p 5012:5012 \
+  -p 5013:5013 \
+  -v "$(pwd)/data:/data" \
+  -v "$(pwd)/logs:/logs" \
+  -v "$(pwd)/tplogs:/tplogs" \
+  -v "$(pwd)/scripts:/scripts" \
+  -e KX_LICENSE_B64="${KX_LICENSE_B64}" \
+  --restart unless-stopped \
+  peteclarkez/kdbx-tick:latest
+
+# View logs
+docker logs -f kdbx-tick
+
+# Stop
+docker stop kdbx-tick && docker rm kdbx-tick
 ```
 
 For build instructions, multi-architecture builds, customization, gateway usage, environment variables, and other developer documentation, see [DEVELOPMENT.md](DEVELOPMENT.md).
