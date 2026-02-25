@@ -32,8 +32,10 @@ setup_kx_license() {
     fi
 }
 
-# Only run if KX_LICENSE_B64 is set and non-empty
-if [[ -n "${KX_LICENSE_B64:-}" ]]; then
+# Prefer Docker secret file over env var (fallback for docker run usage)
+if [[ -f "/run/secrets/kx_license_b64" ]]; then
+    setup_kx_license "$(cat /run/secrets/kx_license_b64)" "$KX_HOME"
+elif [[ -n "${KX_LICENSE_B64:-}" ]]; then
     setup_kx_license "$KX_LICENSE_B64" "$KX_HOME"
 fi
 

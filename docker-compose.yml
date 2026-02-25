@@ -22,9 +22,9 @@ services:
       - ./tplogs:/tplogs
       # User customization scripts (sym.q required, feed.q optional)
       - ./scripts:/scripts
+    secrets:
+      - kx_license_b64
     environment:
-      # Runtime license override (optional - uses build-time license if not set)
-      - KX_LICENSE_B64=${KX_LICENSE_B64:-}
       # Port configuration (optional - uses defaults if not set)
       - TICK_PORT=${TICK_PORT:-5010}
       - RDB_PORT=${RDB_PORT:-5011}
